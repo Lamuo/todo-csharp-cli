@@ -1,4 +1,7 @@
-﻿namespace To_Do_List
+﻿using System.Globalization;
+using System.Threading.Tasks;
+
+namespace To_Do_List
 
 {
     internal class Program
@@ -8,16 +11,15 @@
             string path = "tasks.json";
             List<TaskItem> tasks = TaskManager.LoadFile(path);
 
-            Console.WriteLine("===== TO-DO LIST =====");
             string? choice;
             do {
                 ShowOptions();
                 choice = Console.ReadLine();
+                Console.Clear();
                 switch (choice)
                 {
-                    //Amogus
-                    case "1":
-                        ShowTasks(tasks);
+                    case "1":                     
+                        ShowTasks(ShowFilter(tasks));
                         break;
                     case "2":
                         AddTask(tasks);
@@ -32,9 +34,6 @@
                         DeleteTask(tasks);
                         break;
                     case "6":
-                        ShowActiveTasks(tasks);
-                        break;
-                    case "7":
                         TaskManager.SaveFile(tasks, path);
                         Console.WriteLine("Tasks saved. Exiting...");
                         await Task.Delay(1000);
@@ -43,8 +42,78 @@
                         Console.WriteLine("Invalid option. Please try again.");
                         break;
                 }
-            } while(choice != "7");
-            Console.ReadLine();
+                Console.Write("Press any key to continue or esc to exit the program... ");
+                if(Convert.ToString(Console.ReadKey().Key).Contains("scape"))
+                {
+                    choice = "6";
+                }
+                Console.Clear();
+            } while(choice != "6");
+        }
+
+        static void ShowOptions()
+        {
+            Console.WriteLine("===== TO-DO LIST =====");
+            Console.WriteLine("\n1. View Tasks");
+            Console.WriteLine("2. Add Task");
+            Console.WriteLine("3. Edit Task");
+            Console.WriteLine("4. Complete Task");
+            Console.WriteLine("5. Delete Task");
+            Console.WriteLine("6. Save and Exit");
+            Console.Write("\nChoose an option: ");
+        }
+
+        static List<TaskItem> ShowFilter(List<TaskItem> tasks)
+        {
+            Console.WriteLine("Choose one filter:");
+            Console.WriteLine("1. View All Tasks");
+            Console.WriteLine("2. View Active Tasks");
+            Console.WriteLine("3. View Completed Tasks");
+            Console.WriteLine("4. View Tasks by Priority");
+            Console.WriteLine("5. View Tasks by Due Date");
+            string? showInput = Console.ReadLine();
+            List<TaskItem> showChoice;
+            switch (showInput)
+            {
+                case "1":
+                    showChoice = tasks;
+                    break;
+                case "2":
+                    showChoice = tasks.Where(t => !t.isCompleted).ToList();
+                    break;
+                case "3":
+                    showChoice = tasks.Where(t => t.isCompleted).ToList();
+                    break;
+                case "4":
+                    showChoice = tasks.OrderByDescending(t => t.priority).ToList();
+                    break;
+                case "5":
+                    showChoice = tasks.OrderBy(t => t.dueDate).ToList();
+                    break;
+                default:
+                    Console.WriteLine("choice not supported, defaulting to All Tasks...");
+                    showChoice = tasks;
+                    break;
+            }
+            return showChoice;
+        }
+
+        static void ShowTasks(List<TaskItem> tasks)
+        {
+            if (tasks.Count == 0)
+            {
+                Console.WriteLine("No tasks available.");
+                return;
+            }
+            foreach (var task in tasks)
+            {
+                Console.WriteLine($"Title: {task.title}");
+                Console.WriteLine($"Description: {task.description}");
+                Console.WriteLine($"Priority: {task.priority}");
+                Console.WriteLine($"Due Date: {task.dueDate.ToShortDateString()}");
+                Console.WriteLine($"Completed: {task.isCompleted}");
+                Console.WriteLine("-----------------------------");
+            }
         }
 
         static void AddTask(List<TaskItem> tasks)
@@ -65,35 +134,6 @@
                 dueDate: DateTime.TryParse(dueDate, out DateTime parsedDate) ? parsedDate : DateTime.Now.AddDays(7),
                 isCompleted: false
             ));
-        }
-
-        static void ShowTasks(List<TaskItem> tasks)
-        {
-            if (tasks.Count == 0)
-            {
-                Console.WriteLine("No tasks available.");
-                return;
-            }
-            foreach (var task in tasks)
-            {
-                Console.WriteLine($"Title: {task.title}");
-                Console.WriteLine($"Description: {task.description}");
-                Console.WriteLine($"Priority: {task.priority}");
-                Console.WriteLine($"Due Date: {task.dueDate.ToShortDateString()}");
-                Console.WriteLine($"Completed: {task.isCompleted}");
-                Console.WriteLine("-----------------------------");
-            }
-        }
-        static void ShowOptions()
-        {
-            Console.WriteLine("\n1. View Tasks");
-            Console.WriteLine("2. Add Task");
-            Console.WriteLine("3. Edit Task");
-            Console.WriteLine("4. Complete Task");
-            Console.WriteLine("5. Delete Task");
-            Console.WriteLine("6. View Active Tasks");
-            Console.WriteLine("7. Save and Exit");
-            Console.Write("\nChoose an option: ");
         }
 
         static void EditTask(List<TaskItem> tasks)
@@ -208,19 +248,6 @@
             tasks.RemoveAt(option);
             option++;
             Console.WriteLine("Task number "+option+" deleted.");
-        }
-
-        static void ShowActiveTasks(List<TaskItem> tasks)
-        {
-            Console.WriteLine("===== ACTIVE TASKS =====");
-            foreach (var task in tasks.Where(t => !t.isCompleted))
-            {
-                Console.WriteLine($"Title: {task.title}");
-                Console.WriteLine($"Description: {task.description}");
-                Console.WriteLine($"Priority: {task.priority}");
-                Console.WriteLine($"Due Date: {task.dueDate.ToShortDateString()}");
-                Console.WriteLine("-----------------------------");
-            }
         }
     }
 }
